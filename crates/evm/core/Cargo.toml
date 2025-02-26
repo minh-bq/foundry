@@ -54,7 +54,8 @@ eyre.workspace = true
 futures.workspace = true
 itertools.workspace = true
 parking_lot.workspace = true
-serde.workspace = true
+serde = { workspace = true, optional = true }
+alloy-serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 tokio = { workspace = true, features = ["time", "macros"] }
@@ -63,3 +64,7 @@ url.workspace = true
 
 [dev-dependencies]
 foundry-test-utils.workspace = true
+
+[features]
+default = ["serde"]
+serde = ["dep:serde"]

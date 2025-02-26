@@ -1413,6 +1413,7 @@ impl Backend {
                 blob_hashes,
                 optimism: OptimismFields { enveloped_tx: Some(Bytes::new()), ..Default::default() },
                 authorization_list: authorization_list.map(Into::into),
+                payer: None,
             };
 
         if env.block.basefee.is_zero() {

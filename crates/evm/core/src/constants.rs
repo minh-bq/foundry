@@ -55,6 +55,9 @@ pub const DEFAULT_CREATE2_DEPLOYER_RUNTIME_CODE: &[u8] = &hex!("7fffffffffffffff
 pub const DEFAULT_CREATE2_DEPLOYER_CODEHASH: B256 =
     b256!("2fa86add0aed31f33a762c9d88e807c475bd51d0f52bd0955754b2608f7e4989");
 
+/// The Ronin sponsored transaction type
+pub const SPONSORED_TX_TYPE_ID: u8 = 0x64;
+
 #[cfg(test)]
 mod tests {
     use super::*;

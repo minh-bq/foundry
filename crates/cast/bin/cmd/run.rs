@@ -182,6 +182,8 @@ impl RunArgs {
         let mut env =
             EnvWithHandlerCfg::new_with_spec_id(Box::new(env.clone()), executor.spec_id());
 
+        env.enable_ronin();
+
         // Set the state to the moment right before the transaction
         if !self.quick {
             if !shell::is_json() {

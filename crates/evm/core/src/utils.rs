@@ -1,11 +1,10 @@
 pub use crate::ic::*;
 use crate::{
-    backend::DatabaseExt, constants::DEFAULT_CREATE2_DEPLOYER_CODEHASH, precompiles::ODYSSEY_P256,
-    InspectorExt,
+    backend::DatabaseExt, constants::{DEFAULT_CREATE2_DEPLOYER_CODEHASH, SPONSORED_TX_TYPE_ID}, precompiles::ODYSSEY_P256, ronin::TxSponsored, InspectorExt
 };
-use alloy_consensus::BlockHeader;
+use alloy_consensus::{BlockHeader, Typed2718};
 use alloy_json_abi::{Function, JsonAbi};
-use alloy_network::AnyTxEnvelope;
+use alloy_network::{AnyTxEnvelope};
 use alloy_primitives::{Address, Selector, TxKind, B256, U256};
 use alloy_provider::{network::BlockResponse, Network};
 use alloy_rpc_types::{Transaction, TransactionRequest};
@@ -93,8 +92,28 @@ pub fn get_function<'a>(
 /// Accounts for an impersonated transaction by resetting the `env.tx.caller` field to `tx.from`.
 pub fn configure_tx_env(env: &mut revm::primitives::Env, tx: &Transaction<AnyTxEnvelope>) {
     let impersonated_from = is_impersonated_tx(&tx.inner).then_some(tx.from);
+
     if let AnyTxEnvelope::Ethereum(tx) = &tx.inner {
         configure_tx_req_env(env, &tx.clone().into(), impersonated_from).expect("cannot fail");
+    } else if tx.inner.ty() == SPONSORED_TX_TYPE_ID {
+        configure_sponsored_tx_env(env, tx);
+    }
+}
+
+fn configure_sponsored_tx_env(env: &mut revm::primitives::Env, tx: &Transaction<AnyTxEnvelope>) {
+    if let AnyTxEnvelope::Unknown(tx_sponsored) = &tx.inner {
+        let tx_sponsored: TxSponsored = tx_sponsored.inner.fields.deserialize_as().unwrap();
+
+        env.tx.transact_to = tx_sponsored.to.unwrap_or(TxKind::Create);
+        env.tx.caller = tx.from;
+        env.tx.gas_limit = tx_sponsored.gas_limit;
+        env.tx.nonce = Some(tx_sponsored.nonce);
+        env.tx.value = tx_sponsored.value;
+        env.tx.data = tx_sponsored.input;
+        env.tx.chain_id = Some(tx_sponsored.chain_id);
+        env.tx.gas_price = U256::from(tx_sponsored.max_fee_per_gas);
+        env.tx.gas_priority_fee = Some(U256::from(tx_sponsored.max_priority_fee_per_gas));
+        env.tx.payer = Some(tx_sponsored.payer);
     }
 }
 
